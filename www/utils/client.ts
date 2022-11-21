@@ -3,8 +3,8 @@ import {
   defaultExchanges,
   ExchangeInput,
 } from "@urql/core";
-import { createClient as createWSClient } from "graphql-ws";
 import { withUrqlClient } from "next-urql";
+import { createClient as createWSClient } from "graphql-ws";
 import { ExchangeIO, createClient } from "urql";
 
 const isServerSide = typeof window === "undefined";
