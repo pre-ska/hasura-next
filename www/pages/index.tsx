@@ -4,54 +4,20 @@ import {
   GetServerSideProps,
   NextPage,
 } from "next";
+import { client } from "../utils/client";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
+import {
+  GetFriends,
+  GetFriendsQuery,
+  GetFriendsQueryVariables,
+} from "../generated/graphql";
 
-type Data = {
-  friends: Record<string, string>[];
-};
+interface Props {
+  friends: GetFriendsQuery["friend"];
+}
 
-type Friend = {
-  name: string;
-};
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  let friends = null;
-  console.log(process.env.HASURA_PROJECT_ENDPOINT);
-  console.log(process.env.NEXT_PUBLIC_HASURA_PROJECT_ENDPOINT);
-
-  try {
-    const response = await fetch(
-      process.env.NEXT_PUBLIC_HASURA_PROJECT_ENDPOINT as string,
-      {
-        method: "POST",
-        headers: {
-          "x-hasura-admin-secret": process.env.HASURA_ADMIN_SECRET as string,
-        },
-        body: JSON.stringify({
-          query: `query {
-            friend {
-              name
-            }
-          }`,
-        }),
-      }
-    );
-
-    const result = await response.json();
-
-    friends = result.data.friend;
-  } catch (e) {
-    console.log(e);
-  }
-  return {
-    props: { friends },
-  };
-};
-
-const Home: NextPage = ({
-  friends,
-}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Home: NextPage<Props> = ({ friends }) => {
   return (
     <div className={styles.container}>
       <Head>
@@ -61,8 +27,8 @@ const Home: NextPage = ({
       </Head>
 
       <main className={styles.main}>
-        {friends.map((friend: Friend, i: number) => (
-          <p key={i}>{friend.name}</p>
+        {friends.map((friend) => (
+          <p key={friend.id}>{friend.name}</p>
         ))}
       </main>
 
@@ -83,3 +49,17 @@ const Home: NextPage = ({
 };
 
 export default Home;
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return client
+    .query<GetFriendsQuery, GetFriendsQueryVariables>(GetFriends)
+    .toPromise()
+    .then((d) => {
+      console.log(d);
+
+      return {
+        props: { friends: d.data?.friend },
+      };
+    })
+    .catch((e) => ({ props: {} }));
+};
